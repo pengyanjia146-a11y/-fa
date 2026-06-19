@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>学生状态自动判因评分</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--blue:#2563eb;--red:#dc2626;--green:#16a34a;--orange:#d97706;--purple:#7c3aed;--cyan:#0891b2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",Arial,sans-serif;color:var(--text)}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#2563eb,#4338ca);color:#fff;padding:14px 11px 11px;box-shadow:0 4px 18px rgba(37,99,235,.25)}
+h1{font-size:18px;margin:0 0 8px}.topgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.pill{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:7px 4px;text-align:center}.pill b{display:block;font-size:16px}.pill span{font-size:11px;opacity:.9}
+main{padding:9px 9px 78px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin:9px 0;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.card h2{font-size:16px;margin:0 0 9px}.row{display:flex;gap:8px;align-items:center;margin:8px 0}.row>*{flex:1}label{display:block;font-size:13px;color:var(--muted);margin:7px 0 4px}input,select,textarea,button{font:inherit;border-radius:12px;border:1px solid var(--line);padding:10px;background:#fff;color:var(--text);width:100%}textarea{min-height:62px;resize:vertical}button{background:var(--blue);color:#fff;border:none;font-weight:750}.btn2{background:#111827}.btn3{background:#fff;color:#1f2937;border:1px solid var(--line)}.danger{background:var(--red)}.ok{background:var(--green)}.warn{background:var(--orange)}button:disabled{opacity:.45}.miniBtn{font-size:12px;padding:7px 8px;border-radius:10px}
+.small{font-size:12px;color:var(--muted);line-height:1.5}.tiny{font-size:11px;color:#9ca3af}.big{font-size:30px;font-weight:850}.score{display:flex;align-items:center;justify-content:space-between}.score .big{color:var(--blue)}.tag{display:inline-block;border-radius:999px;background:#eef2ff;color:#3730a3;padding:3px 8px;font-size:12px}.tag2{display:inline-block;border-radius:999px;background:#f3f4f6;color:#374151;padding:3px 8px;font-size:12px}.red{color:var(--red)}.green{color:var(--green)}.orange{color:var(--orange)}.purple{color:var(--purple)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.notice{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:10px;font-size:13px;line-height:1.55}.live{background:#ecfdf5;border:1px solid #bbf7d0;color:#14532d;border-radius:12px;padding:10px;font-size:14px;line-height:1.6}.statusBox{border-radius:15px;padding:12px;background:#eff6ff;border:1px solid #bfdbfe}.statusBox h3{margin:0 0 6px;font-size:18px}.bar{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden}.bar div{height:100%;background:var(--blue);width:0%}.bar.green div{background:var(--green)}.bar.red div{background:var(--red)}.bar.orange div{background:var(--orange)}.bar.purple div{background:var(--purple)}
+.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{border-bottom:1px solid var(--line);padding:8px 4px;text-align:left;vertical-align:top}.footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr)}.footer button{border-radius:0;background:#fff;color:#374151;border:none;border-right:1px solid var(--line);font-size:12px;padding:10px 1px}.footer button.active{color:var(--blue);font-weight:850;background:#eff6ff}.hidden{display:none}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.metric{border:1px solid var(--line);border-radius:14px;padding:9px;background:#fff}.metric b{font-size:17px}.metric span{display:block;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1>学生状态自动判因评分</h1>
+  <div class="topgrid">
+    <div class="pill"><b id="topStudy">0m</b><span>学习</span></div>
+    <div class="pill"><b id="topDeep">0m</b><span>深度</span></div>
+    <div class="pill"><b id="topGame">0m</b><span>游戏</span></div>
+    <div class="pill"><b id="topScore">0</b><span>总分</span></div>
+  </div>
+</header>
+<main>
+<section id="pageHome">
+  <div class="card score">
+    <div><h2>今日总览</h2><div class="small" id="dateText"></div></div>
+    <div class="big" id="scoreBig">0</div>
+  </div>
+  <div class="card">
+    <h2>连续计时</h2>
+    <div class="notice">一天开始后，中间不停止。你只能切换状态：学习、游戏、吃饭、休息、睡眠等。这样才能得到完整的一天时间分布。</div>
+    <div class="live" id="liveBox">未开始。先选择初始状态，然后点“开始今天”。</div>
+    <label>切换到</label><select id="stateSelect"></select>
+    <div class="row"><button class="ok" id="startBtn" onclick="startDay()">开始今天</button><button class="warn" id="switchBtn" onclick="switchState()">切换状态</button></div>
+    <button class="danger" id="endBtn" onclick="endDay()">结束今天</button>
+    <p class="small">学习状态中切出应用，回来后会记录违规时间。之后系统会用“手机使用记录”和“应用类型规则”自动判断原因：游戏、短视频、浏览器等。</p>
+  </div>
+  <div class="card">
+    <h2>今日状态</h2>
+    <div class="statusBox" id="dailyStatus"></div>
+  </div>
+  <div class="card">
+    <h2>今日目标</h2>
+    <div class="grid3"><div><label>学习目标min</label><input type="number" id="goalStudy" value="360"></div><div><label>深度目标min</label><input type="number" id="goalDeep" value="90"></div><div><label>游戏上限min</label><input type="number" id="gameLimit" value="30"></div></div>
+    <label>今日三件核心任务</label><textarea id="tasks" placeholder="① 数学错题\n② 英语阅读\n③ 化学作业"></textarea>
+    <button onclick="saveAll();renderAll();toast('已保存')">保存目标</button>
+  </div>
+  <div class="card">
+    <h2>各方面得分</h2>
+    <div id="aspectBars"></div>
+  </div>
+  <div class="card">
+    <h2>自动统计</h2>
+    <table class="table"><tbody id="summaryRows"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>今日违规明细</h2>
+    <div class="small" id="violationSummary"></div>
+    <table class="table"><thead><tr><th>时间</th><th>种类</th><th>时长</th></tr></thead><tbody id="violationRows"></tbody></table>
+  </div>
+</section>
+
+<section id="pageStates" class="hidden">
+  <div class="card">
+    <h2>自定义状态</h2>
+    <p class="small">你可以自己添加状态，例如：背单词、刷数学题、原神、B站、午休、通勤。评分主要看“类别”，不是名字。</p>
+    <label>状态名称</label><input id="newStateName" placeholder="例如：背单词 / 原神 / 午休">
+    <label>状态类别</label><select id="newStateCat"></select>
+    <button onclick="addState()">添加状态</button>
+  </div>
+  <div class="card">
+    <h2>状态列表</h2>
+    <table class="table"><thead><tr><th>状态</th><th>类别</th><th></th></tr></thead><tbody id="stateRows"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>应用类型规则：只选一次</h2>
+    <p class="small">规则例子：抖音=短视频/娱乐刷屏，原神=游戏/游戏软件，Chrome=浏览器/网页跑偏。之后同一个 App 再出现在违规时间段里，会自动归因。</p>
+    <div class="grid2"><div><label>App名称或包名</label><input id="ruleAppKey" placeholder="例如：抖音 / com.ss.android.ugc.aweme"></div><div><label>显示名称</label><input id="ruleAppLabel" placeholder="可选，例如：抖音"></div></div>
+    <label>应用类型</label><select id="ruleVType"></select>
+    <div class="row"><button onclick="addAppRule()">保存应用规则</button><button class="btn3" onclick="clearAppRules()">清空规则</button></div>
+    <table class="table"><thead><tr><th>App</th><th>类型</th><th></th></tr></thead><tbody id="appRuleRows"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>手机使用记录导入/匹配</h2>
+    <p class="small">这版会把“手机使用时间段”和“学习违规时间段”做重叠比较，选重叠时间最长的 App 作为违规原因。当前测试 APK 主要支持粘贴/导入记录；如果以后接入系统 UsageStats 原生桥，按钮会自动读取。</p>
+    <div class="row"><button class="btn2" onclick="trySyncUsage()">尝试读取系统使用记录</button><button class="btn3" onclick="autoClassifyAll();renderAll();toast('已重新匹配违规原因')">重新匹配违规</button></div>
+    <div class="notice" id="usageBridgeStatus">未检测系统使用记录权限。普通 APK 需要在系统里手动允许“使用情况访问权限”；如果没有原生桥，请用下面的粘贴导入。</div>
+    <label>粘贴手机使用记录</label>
+    <textarea id="usageImport" placeholder="支持格式：
+08:10-08:25 抖音
+2026-06-19 08:30-08:50 com.tencent.mm 微信
+2026-06-19 21:10-21:42 com.miHoYo.Yuanshen 原神"></textarea>
+    <div class="row"><button onclick="importUsageText()">导入并自动匹配</button><button class="btn3" onclick="clearUsageRecords()">清空使用记录</button></div>
+    <h2>未分类 App</h2>
+    <p class="small">这里出现的 App 只需要选一次类型，以后会自动处理。</p>
+    <table class="table"><thead><tr><th>App</th><th>出现</th><th>设为</th></tr></thead><tbody id="unmappedAppRows"></tbody></table>
+    <h2>已导入使用记录</h2>
+    <table class="table"><thead><tr><th>时间</th><th>App</th><th>重叠</th></tr></thead><tbody id="usageRows"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>类别对评分的影响</h2>
+    <table class="table"><tbody id="categoryRows"></tbody></table>
+  </div>
+</section>
+
+<section id="pageTimeline" class="hidden">
+  <div class="card">
+    <h2>今日时间轴</h2>
+    <div class="small" id="timelineCheck"></div>
+    <table class="table"><thead><tr><th>时间</th><th>状态</th><th>分钟</th><th></th></tr></thead><tbody id="blockRows"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>补录/修正</h2>
+    <p class="small">只用于误点补救。正常使用不要手动补录，否则容易破坏连续性。</p>
+    <div class="row"><div><label>开始</label><input type="time" id="manualStart"></div><div><label>结束</label><input type="time" id="manualEnd"></div></div>
+    <label>状态</label><select id="manualModule"></select>
+    <label>违规种类（仅当状态为“学习违规离开”时使用）</label><select id="manualViolationType"></select>
+    <label>说明</label><input id="manualNote" placeholder="补录原因">
+    <button class="btn2" onclick="addManual()">补录一段</button>
+  </div>
+</section>
+
+<section id="pageStats" class="hidden">
+  <div class="card">
+    <h2>一段时间综合打分</h2>
+    <div class="row"><div><label>统计范围</label><select id="periodSelect" onchange="renderPeriod()"><option value="week">本周</option><option value="7">近7天</option><option value="14">近14天</option><option value="30">近30天</option><option value="90">近90天</option><option value="all">全部</option></select></div><div><label>操作</label><button class="btn2" onclick="archiveToday();renderAll();toast('已保存今天快照')">保存今天快照</button></div></div>
+    <div class="grid2" id="periodCards"></div>
+  </div>
+  <div class="card">
+    <h2>阶段各方面平均分</h2>
+    <div id="periodAspectBars"></div>
+  </div>
+  <div class="card">
+    <h2>阶段违规统计</h2>
+    <div class="small" id="periodViolationSummary"></div>
+    <table class="table"><thead><tr><th>种类</th><th>次数</th><th>时间</th></tr></thead><tbody id="periodViolationRows"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>每日状态记录</h2>
+    <table class="table"><thead><tr><th>日期</th><th>状态</th><th>分数</th><th>学习/游戏</th></tr></thead><tbody id="dayRows"></tbody></table>
+  </div>
+</section>
+
+<section id="pageReflect" class="hidden">
+  <div class="card">
+    <h2>评分补充</h2>
+    <p class="small">时间类由算法自动算；这三项需要你自己给。不要乱给高分，要反映真实质量。</p>
+    <label>任务完成 /20</label><input type="number" id="taskScore" value="14" min="0" max="20">
+    <label>学习质量 /15</label><input type="number" id="qualityScore" value="10" min="0" max="15">
+    <label>身体情绪 /10</label><input type="number" id="bodyScore" value="7" min="0" max="10">
+    <button onclick="saveAll();renderAll();toast('已更新评分')">更新综合分</button>
+  </div>
+  <div class="card">
+    <h2>每日反思</h2>
+    <label>今天最大收获</label><textarea id="gain"></textarea>
+    <label>今天最大问题</label><textarea id="problem"></textarea>
+    <label>明天最重要的一件事</label><textarea id="tomorrow"></textarea>
+    <button onclick="saveAll();archiveToday();renderAll();toast('已保存反思和今日快照')">保存反思</button>
+  </div>
+  <div class="card">
+    <h2>导出</h2>
+    <button onclick="exportText()">生成今日记录</button>
+    <label>复制下面内容</label><textarea id="exportBox" class="mono"></textarea>
+    <div class="row"><button class="btn2" onclick="newDay()">新的一天</button><button class="danger" onclick="clearAll()">清空全部</button></div>
+  </div>
+</section>
+</main>
+<div class="footer"><button id="navHome" class="active" onclick="showPage('Home')">总览</button><button id="navStates" onclick="showPage('States')">状态</button><button id="navTimeline" onclick="showPage('Timeline')">时间轴</button><button id="navStats" onclick="showPage('Stats')">统计</button><button id="navReflect" onclick="showPage('Reflect')">反思</button></div>
+<script>
+const STORE='student_reflect_v5';
+const CAT={
+ study:{name:'普通学习',desc:'计入学习时间，影响学习投入'},
+ deep:{name:'深度学习',desc:'计入学习和深度学习，权重更高'},
+ game:{name:'游戏娱乐',desc:'计入游戏时间，超过上限会扣娱乐控制'},
+ wechat:{name:'微信必要沟通',desc:'学习中允许的必要沟通，不算游戏'},
+ violation:{name:'学习违规离开',desc:'学习期间切到其他应用，直接扣专注'},
+ sleep:{name:'睡眠',desc:'生活状态，主要用于完整时间轴'},
+ rest:{name:'休息',desc:'生活状态'}, meal:{name:'吃饭',desc:'生活状态'}, sport:{name:'运动',desc:'生活状态，可帮助判断生活平衡'}, commute:{name:'通勤',desc:'生活状态'}, other:{name:'其他',desc:'暂不参与主要评分'}
+};
+const VTYPE={
+ game:{name:'游戏/游戏软件',weight:1.30},
+ shortvideo:{name:'短视频/娱乐刷屏',weight:1.45},
+ browser:{name:'浏览器/网页跑偏',weight:1.00},
+ chat:{name:'非必要聊天',weight:1.10},
+ media:{name:'音乐/视频/影视',weight:1.20},
+ tool:{name:'工具类但跑偏',weight:.70},
+ other:{name:'其他应用',weight:1.00},
+ unknown:{name:'未确认',weight:1.00}
+};
+const VTYPE_ORDER=['game','shortvideo','browser','chat','media','tool','other','unknown'];
+const DEFAULT_STATES=[
+ {id:'eng',name:'英语学习',cat:'study',def:true},{id:'math',name:'数学学习',cat:'study',def:true},{id:'sci',name:'理化/文综',cat:'study',def:true},{id:'otherStudy',name:'其他学习',cat:'study',def:true},{id:'deep',name:'深度学习',cat:'deep',def:true},
+ {id:'wechat',name:'微信必要沟通',cat:'wechat',def:true},{id:'game',name:'游戏',cat:'game',def:true},{id:'meal',name:'吃饭',cat:'meal',def:true},{id:'rest',name:'休息',cat:'rest',def:true},{id:'sport',name:'运动',cat:'sport',def:true},{id:'sleep',name:'睡眠',cat:'sleep',def:true},{id:'commute',name:'通勤',cat:'commute',def:true},{id:'violation',name:'学习违规离开',cat:'violation',def:true},{id:'other',name:'其他',cat:'other',def:true}
+];
+let app={states:DEFAULT_STATES.slice(),current:{date:null,blocks:[],active:false,currentId:null,currentStartMs:null,hidden:null,ended:false},history:[],usage:[],appRules:{}};
+function $(id){return document.getElementById(id)}
+function nowMs(){return Date.now()}
+function localDate(ms){let d=new Date(ms||Date.now());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function timeStr(ms){let d=new Date(ms);return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function durMin(a,b){return Math.max(0,Math.round((b-a)/60000))}
+function fmt(m){m=Math.round(m||0);let h=Math.floor(m/60),r=m%60;return h?`${h}h${r}m`:`${r}m`}
+function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+function stateOf(id){return app.states.find(s=>s.id===id)||{id,name:id,cat:'other'}}
+function nameOf(id){return stateOf(id).name}
+function catOf(id){return stateOf(id).cat||'other'}
+function isLearning(id){let c=catOf(id);return c==='study'||c==='deep'}
+function isDeep(id){return catOf(id)==='deep'}
+function load(){try{let raw=localStorage.getItem(STORE)||localStorage.getItem('student_reflect_v4')||localStorage.getItem('student_reflect_v3');if(raw){let x=JSON.parse(raw);if(x&&x.current){app=x}}}catch(e){}; if(!app.states||!app.states.length)app.states=DEFAULT_STATES.slice(); if(!app.current)app.current={date:null,blocks:[],active:false,currentId:null,currentStartMs:null,hidden:null,ended:false}; if(!app.history)app.history=[]; if(!app.usage)app.usage=[]; if(!app.appRules)app.appRules={}; ['goalStudy','goalDeep','gameLimit','tasks','taskScore','qualityScore','bodyScore','gain','problem','tomorrow'].forEach(id=>{let v=localStorage.getItem('f_'+id); if(v!==null&&$(id))$(id).value=v})}
+function saveAll(){['goalStudy','goalDeep','gameLimit','tasks','taskScore','qualityScore','bodyScore','gain','problem','tomorrow'].forEach(id=>{if($(id))localStorage.setItem('f_'+id,$(id).value)}); if(app.usage)app.usage=app.usage.slice(-2000); localStorage.setItem(STORE,JSON.stringify(app))}
+function initSelects(){let oldState=$('stateSelect')?$('stateSelect').value:null, oldManual=$('manualModule')?$('manualModule').value:null, oldCat=$('newStateCat')?$('newStateCat').value:null, oldV=$('manualViolationType')?$('manualViolationType').value:null, oldRule=$('ruleVType')?$('ruleVType').value:null; let html=app.states.map(s=>`<option value="${s.id}">${s.name}｜${CAT[s.cat]?.name||s.cat}</option>`).join(''); [['stateSelect',oldState],['manualModule',oldManual]].forEach(pair=>{let id=pair[0],old=pair[1]; if($(id)){$(id).innerHTML=html;if(old&&app.states.some(s=>s.id===old))$(id).value=old}}); let catHtml=Object.entries(CAT).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join(''); if($('newStateCat')){$('newStateCat').innerHTML=catHtml;if(oldCat&&CAT[oldCat])$('newStateCat').value=oldCat} let vhtml=VTYPE_ORDER.map(k=>`<option value="${k}">${VTYPE[k].name}</option>`).join(''); if($('manualViolationType')){$('manualViolationType').innerHTML=vhtml;if(oldV&&VTYPE[oldV])$('manualViolationType').value=oldV} if($('ruleVType')){$('ruleVType').innerHTML=vhtml;if(oldRule&&VTYPE[oldRule])$('ruleVType').value=oldRule}}
+function virtualBlocks(){let arr=(app.current.blocks||[]).slice(); if(app.current.active&&app.current.currentId&&app.current.currentStartMs){arr.push({s:app.current.currentStartMs,e:nowMs(),m:app.current.currentId,n:'进行中',live:true})} return arr.sort((a,b)=>a.s-b.s)}
+function vtypeName(k){return (VTYPE[k]&&VTYPE[k].name)||k||'未确认'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function normAppKey(s){return String(s||'').trim().toLowerCase().replace(/\s+/g,' ')}
+function dateBaseMs(date){let d=date?new Date(date+'T00:00:00'):new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()}
+function parseTimeOnDate(date,hhmm){let [h,m]=hhmm.split(':').map(Number);return dateBaseMs(date)+h*3600000+m*60000}
+function appRuleFor(key,label){let k=normAppKey(key), l=normAppKey(label); return app.appRules[k]||app.appRules[l]||null}
+function recordId(r){return [r.s,r.e,normAppKey(r.key||r.label)].join('|')}
+function overlapMs(a,b,c,d){return Math.max(0,Math.min(b,d)-Math.max(a,c))}
+function addUsageRecord(rec){if(!app.usage)app.usage=[]; rec.key=rec.key||rec.label; rec.label=rec.label||rec.key; rec.key=String(rec.key||'').trim(); rec.label=String(rec.label||'').trim(); if(!rec.key&&!rec.label)return false; let id=recordId(rec); if(app.usage.some(x=>recordId(x)===id))return false; app.usage.push(rec); return true}
+function parseUsageLine(line){line=line.trim(); if(!line)return null; let m=line.match(/^(?:(\d{4}-\d{2}-\d{2})\s+)?(\d{1,2}:\d{2})\s*(?:-|~|—|至|到|\s+)\s*(\d{1,2}:\d{2})\s+(.+)$/); if(!m)return null; let date=m[1]||app.current.date||localDate(), s=parseTimeOnDate(date,m[2]), e=parseTimeOnDate(date,m[3]); if(e<=s)e+=86400000; let rest=m[4].trim(); let parts=rest.split(/\s+/); let pkg=parts.find(x=>/^[a-zA-Z][\w]*(\.[\w]+)+$/.test(x)); let label=rest; if(pkg){label=parts.filter(x=>x!==pkg).join(' ')||pkg} return {s,e,key:pkg||label,label:label,src:'import'}}
+function importUsageText(){let box=$('usageImport'); if(!box)return; let ok=0,bad=0; box.value.split(/\n+/).forEach(line=>{let r=parseUsageLine(line); if(r){if(addUsageRecord(r))ok++}else if(line.trim())bad++}); autoClassifyAll(); saveAll();renderAll();toast(`导入${ok}条，无法识别${bad}条`)}
+function clearUsageRecords(){if(!confirm('清空已导入的手机使用记录？应用类型规则不会清空。'))return; app.usage=[]; saveAll();renderAll()}
+function addAppRule(key,label,vtype){key=key||($('ruleAppKey')?$('ruleAppKey').value:''); label=label||($('ruleAppLabel')?$('ruleAppLabel').value:''); vtype=vtype||($('ruleVType')?$('ruleVType').value:'unknown'); key=String(key||label||'').trim(); label=String(label||key).trim(); if(!key){toast('先填App名称或包名');return} if(!app.appRules)app.appRules={}; app.appRules[normAppKey(key)]={key:key,label:label,vtype:vtype}; if($('ruleAppKey'))$('ruleAppKey').value=''; if($('ruleAppLabel'))$('ruleAppLabel').value=''; autoClassifyAll(); saveAll();renderAll();toast('已保存规则：'+label+' = '+vtypeName(vtype))}
+function deleteAppRule(k){delete app.appRules[k]; autoClassifyAll(); saveAll();renderAll()}
+function clearAppRules(){if(!confirm('清空全部应用类型规则？'))return; app.appRules={}; saveAll();renderAll()}
+function bestUsageForBlock(b){let best=null,bestOv=0; (app.usage||[]).forEach(u=>{let ov=overlapMs(b.s,b.e,u.s,u.e); if(ov>bestOv){bestOv=ov; best=u}}); if(!best || bestOv<30000)return null; return {rec:best,overlapMin:Math.max(1,Math.round(bestOv/60000))}}
+function autoClassifyBlock(b){if(catOf(b.m)!=='violation')return b; let match=bestUsageForBlock(b); if(!match){b.vtype=b.vtype||'unknown'; return b} let u=match.rec, rule=appRuleFor(u.key,u.label); b.appKey=u.key; b.appLabel=u.label; b.autoOverlapMin=match.overlapMin; b.n='自动匹配：'+u.label+'，重叠'+match.overlapMin+'m'; b.vtype=rule?rule.vtype:(b.vtype&&b.vtype!=='unknown'?b.vtype:'unknown'); return b}
+function autoClassifyAll(){(app.current.blocks||[]).forEach(autoClassifyBlock); (app.history||[]).forEach(d=>{(d.blocks||[]).forEach(autoClassifyBlock); if(d.blocks){let t=totalsFrom(d.blocks),v=violationStats(d.blocks); d.totals=t; d.violations=v; d.status=d.status||dayStatus(d.overall||0,t,d.aspects||{},d.goal||360,d.gameLimit||30,v)}}); saveAll()}
+function usageMatchesForViolations(){let rows=[]; let allBlocks=[]; (app.current.blocks||[]).forEach(b=>allBlocks.push(b)); (app.history||[]).forEach(d=>(d.blocks||[]).forEach(b=>allBlocks.push(b))); allBlocks.filter(b=>catOf(b.m)==='violation').forEach(b=>{let m=bestUsageForBlock(b); if(m)rows.push({block:b,usage:m.rec,overlap:m.overlapMin})}); return rows}
+function unmappedApps(){let map={}; usageMatchesForViolations().forEach(x=>{let u=x.usage, k=normAppKey(u.key||u.label); if(appRuleFor(u.key,u.label))return; if(!map[k])map[k]={key:u.key,label:u.label,count:0,time:0}; map[k].count++; map[k].time+=x.overlap}); return Object.values(map).sort((a,b)=>b.time-a.time||b.count-a.count)}
+function renderAppUsage(){if(!$('appRuleRows'))return; initSelects(); let rules=Object.entries(app.appRules||{}).sort((a,b)=>a[1].label.localeCompare(b[1].label,'zh-CN')); $('appRuleRows').innerHTML=rules.map(([k,r])=>`<tr><td>${esc(r.label)}<br><span class="tiny">${esc(r.key)}</span></td><td>${vtypeName(r.vtype)}</td><td><button class="btn3 miniBtn" onclick="deleteAppRule('${esc(k)}')">删</button></td></tr>`).join('')||'<tr><td colspan="3" class="small">还没有规则。导入使用记录后，先给常用 App 分一次类。</td></tr>'; let unm=unmappedApps(); $('unmappedAppRows').innerHTML=unm.map(u=>`<tr><td>${esc(u.label)}<br><span class="tiny">${esc(u.key)}</span></td><td>${u.count}次 / ${fmt(u.time)}</td><td><select onchange="addAppRule('${esc(u.key)}','${esc(u.label)}',this.value);this.value='unknown'"><option value="unknown">选择</option>${VTYPE_ORDER.filter(x=>x!=='unknown').map(k=>`<option value="${k}">${VTYPE[k].name}</option>`).join('')}</select></td></tr>`).join('')||'<tr><td colspan="3" class="small">暂无未分类 App。导入使用记录并重新匹配后会出现在这里。</td></tr>'; let matches=usageMatchesForViolations(); $('usageRows').innerHTML=(app.usage||[]).slice().sort((a,b)=>b.s-a.s).slice(0,80).map(u=>{let related=matches.filter(x=>recordId(x.usage)===recordId(u)).reduce((s,x)=>s+x.overlap,0); let rule=appRuleFor(u.key,u.label); return `<tr><td>${localDate(u.s)} ${timeStr(u.s)}-${timeStr(u.e)}</td><td>${esc(u.label)}<br><span class="tiny">${esc(u.key)} ${rule?'｜'+vtypeName(rule.vtype):'｜未分类'}</span></td><td>${related?fmt(related):'-'}</td></tr>`}).join('')||'<tr><td colspan="3" class="small">还没有手机使用记录。</td></tr>'}
+function trySyncUsage(){if(window.AndroidUsage&&AndroidUsage.getUsageJson){try{let start=app.current.blocks[0]?.s||dateBaseMs(app.current.date||localDate()), end=Date.now(); let raw=AndroidUsage.getUsageJson(String(start),String(end)); let arr=JSON.parse(raw||'[]'); let n=0; arr.forEach(r=>{if(addUsageRecord({s:Number(r.s),e:Number(r.e),key:r.pkg||r.key,label:r.label||r.pkg,src:'system'}))n++}); autoClassifyAll(); saveAll();renderAll();toast('读取系统记录'+n+'条');return}catch(e){toast('读取失败：'+e.message)}} $('usageBridgeStatus').innerHTML='当前这个测试APK没有可用的系统使用记录桥，或手机未授权。请先用粘贴导入；要真机自动读取，需要开启“使用情况访问权限”。'; toast('请使用粘贴导入模式')}
+
+function totalsFrom(blocks){let t={total:0,study:0,deep:0,game:0,wechat:0,violation:0,violationCount:0,violationPenalty:0,sleep:0,rest:0,meal:0,sport:0,commute:0,other:0}; blocks.forEach(b=>{let d=durMin(b.s,b.e); let c=catOf(b.m); t.total+=d; if(c==='study'||c==='deep')t.study+=d; if(c==='deep')t.deep+=d; if(c==='violation'){let vt=b.vtype||'unknown', w=VTYPE[vt]?.weight||1; t.violationCount+=1; t.violationPenalty+=d*w*1.15+5} if(t[c]!==undefined)t[c]+=d; else t.other+=d}); return t}
+function violationStats(blocks){let r={count:0,total:0,penalty:0,types:{},list:[],mainType:'none'}; blocks.forEach(b=>{if(catOf(b.m)!=='violation')return; let d=durMin(b.s,b.e), vt=b.vtype||'unknown', w=VTYPE[vt]?.weight||1; r.count++; r.total+=d; r.penalty+=d*w*1.15+5; if(!r.types[vt])r.types[vt]={key:vt,name:vtypeName(vt),count:0,time:0}; r.types[vt].count++; r.types[vt].time+=d; r.list.push({s:b.s,e:b.e,min:d,type:vt,name:vtypeName(vt),note:b.n||'',from:b.from||''})}); let arr=Object.values(r.types).sort((a,b)=>b.time-a.time||b.count-a.count); r.mainType=arr[0]?.name||'无'; r.typeRows=arr; return r}
+function askViolationType(){return 'unknown'}
+function formScores(){return {task:clamp(Number($('taskScore').value||0),0,20),quality:clamp(Number($('qualityScore').value||0),0,15),body:clamp(Number($('bodyScore').value||0),0,10)}}
+function compute(blocks){let t=totalsFrom(blocks), v=violationStats(blocks), goal=Number($('goalStudy').value||360), deepGoal=Number($('goalDeep').value||90), gameLimit=Number($('gameLimit').value||30), f=formScores(); let studyA=clamp(t.study/Math.max(1,goal)*100,0,100); let deepA=clamp(t.deep/Math.max(1,deepGoal)*100,0,100); let focusA=clamp(100-v.penalty-Math.max(0,t.game-gameLimit)*0.25,0,100); let gameA= t.game<=gameLimit?100:clamp(100-(t.game-gameLimit)/Math.max(1,gameLimit)*100,0,100); let taskA=clamp((f.task+f.quality)/35*100,0,100); let bodyA=clamp(f.body/10*100,0,100); let overall=Math.round(studyA*.30+deepA*.15+focusA*.15+gameA*.10+taskA*.20+bodyA*.10); let aspects={study:studyA,deep:deepA,focus:focusA,game:gameA,task:taskA,body:bodyA}; let status=dayStatus(overall,t,aspects,goal,gameLimit,v); return {totals:t,violations:v,aspects,overall,status,goal,deepGoal,gameLimit,manual:f}}
+function dayStatus(score,t,a,goal,gameLimit,v){let label='需要调整日', tone='orange', reason=[]; if(v.count>=3||v.total>=20){label='专注受损日';tone='red';reason.push(`违规${v.count}次，共${fmt(v.total)}，主要是${v.mainType}`)} else if(t.game>gameLimit*1.5){label='娱乐偏高日';tone='red';reason.push(`游戏${fmt(t.game)}，超过上限较多`)} else if(score>=88&&a.study>=90&&a.focus>=85){label='高效稳定日';tone='green';reason.push('学习投入和专注都比较稳定')} else if(score>=75){label='正常推进日';tone='blue';reason.push('整体完成度合格')} else if(a.study<50){label='学习不足日';tone='orange';reason.push(`学习${fmt(t.study)}，低于目标较多`)} else {reason.push('有推进，但短板明显')} if(t.deep<Math.max(30,goal*.2))reason.push('深度学习偏少'); if(v.count>0&&v.count<3&&v.total<20)reason.push(`有${v.count}次违规，${fmt(v.total)}`); if(t.game<=gameLimit)reason.push('游戏未超过上限'); let advice=adviceFromAspects(a); if(v.count>0)advice=`先处理违规最高的类型：${v.mainType}。学习开始前把相关入口关掉。`; return {label,tone,reason:reason.slice(0,3),advice}}
+function adviceFromAspects(a){let names={study:'明天先保证学习总时长，不要先碰娱乐。',deep:'明天安排一段不切应用的深度学习。',focus:'学习时把非必要应用关掉，微信只留必要沟通。',game:'先设游戏结束点，到点必须切状态。',task:'今天任务质量偏低，明天减少任务数但做透。',body:'身体状态拖后腿，睡眠和运动要保住。'}; let key=Object.keys(a).sort((x,y)=>a[x]-a[y])[0]; return names[key]||'明天只改一个最明显的问题。'}
+function aspectLabel(k){return {study:'学习投入',deep:'深度学习',focus:'专注纪律',game:'娱乐控制',task:'任务质量',body:'身体生活'}[k]||k}
+function renderAspectBars(target,aspects){let colors={study:'green',deep:'purple',focus:'orange',game:'red',task:'',body:'green'}; target.innerHTML=Object.entries(aspects).map(([k,v])=>`<p class="small">${aspectLabel(k)}：${Math.round(v)}分</p><div class="bar ${colors[k]||''}"><div style="width:${clamp(v,0,100)}%"></div></div>`).join('')}
+function renderHome(){let c=compute(virtualBlocks()), t=c.totals, v=c.violations; $('topStudy').textContent=fmt(t.study); $('topDeep').textContent=fmt(t.deep); $('topGame').textContent=fmt(t.game); $('topScore').textContent=c.overall; $('scoreBig').textContent=c.overall; $('dateText').textContent=app.current.date||localDate(); $('dailyStatus').innerHTML=`<h3 class="${c.status.tone==='red'?'red':c.status.tone==='green'?'green':c.status.tone==='orange'?'orange':''}">${c.status.label}｜${c.overall}分</h3><div class="small">${c.status.reason.join('；')}</div><div class="small"><b>建议：</b>${c.status.advice}</div>`; renderAspectBars($('aspectBars'),c.aspects); $('summaryRows').innerHTML=`<tr><td>总记录</td><td>${fmt(t.total)}</td></tr><tr><td>学习</td><td>${fmt(t.study)} / ${c.goal}m</td></tr><tr><td>深度学习</td><td>${fmt(t.deep)} / ${c.deepGoal}m</td></tr><tr><td>游戏</td><td class="${t.game>c.gameLimit?'red':'green'}">${fmt(t.game)} / ${c.gameLimit}m</td></tr><tr><td>微信必要沟通</td><td>${fmt(t.wechat)}</td></tr><tr><td>学习违规离开</td><td class="${v.count>0?'red':'green'}">${v.count}次 / ${fmt(v.total)}</td></tr><tr><td>主要违规种类</td><td>${v.mainType}</td></tr><tr><td>评分权重</td><td class="small">学习30 + 深度15 + 专注15 + 娱乐10 + 任务质量20 + 身体10</td></tr>`; renderViolationToday(v); renderLive()}
+function renderViolationToday(v){if(!$('violationRows'))return; $('violationSummary').innerHTML=v.count?`今日违规 <b class="red">${v.count}次</b>，共 <b class="red">${fmt(v.total)}</b>，主要种类：${v.mainType}`:'今日暂无学习违规离开。'; $('violationRows').innerHTML=(app.current.blocks||[]).filter(b=>catOf(b.m)==='violation').map(b=>`<tr><td>${timeStr(b.s)}-${timeStr(b.e)}<br><span class="tiny">${esc(b.n||'')}</span></td><td>${vtypeName(b.vtype||'unknown')}<br><span class="tiny">${esc(b.appLabel||'未匹配App')}</span></td><td>${fmt(durMin(b.s,b.e))}</td></tr>`).join('')||'<tr><td colspan="3" class="small">没有违规记录</td></tr>'}
+function renderLive(){let active=app.current.active&&app.current.currentId; $('startBtn').disabled=!!active; $('switchBtn').disabled=!active; $('endBtn').disabled=!active; if(active){let d=durMin(app.current.currentStartMs,nowMs());$('liveBox').innerHTML=`正在：<b>${nameOf(app.current.currentId)}</b><br>本段开始：${timeStr(app.current.currentStartMs)}，已持续：<b>${fmt(d)}</b><br><span class="tiny">中间不能关闭计时，只能切换状态。</span>`}else{$('liveBox').innerHTML=app.current.ended?'今天已结束。需要下一天请点“新的一天”。':'未开始。选择初始状态后点“开始今天”。'}}
+function closeCurrent(endMs,note){let c=app.current;if(c.active&&c.currentId&&c.currentStartMs&&endMs>c.currentStartMs){c.blocks.push({s:c.currentStartMs,e:endMs,m:c.currentId,n:note||''})}}
+function startDay(){if(app.current.active){toast('已经开始，不能重复开始');return}if(app.current.blocks.length&&!confirm('今天已有记录，重新开始会清空当前未归档时间轴。继续？'))return; app.current={date:localDate(),blocks:[],active:true,currentId:$('stateSelect').value,currentStartMs:nowMs(),hidden:null,ended:false}; saveAll();renderAll();toast('已开始今天')}
+function switchState(){if(!app.current.active){toast('先开始今天');return}let newId=$('stateSelect').value,n=nowMs(); closeCurrent(n,'切换'); app.current.currentId=newId; app.current.currentStartMs=n; app.current.hidden=null; saveAll();renderAll();toast('已切换到 '+nameOf(newId))}
+function endDay(){if(!app.current.active){toast('还没开始');return}if(!confirm('确认结束今天？只有睡前/一天结束时才点。'))return; let n=nowMs(); closeCurrent(n,'结束今天'); app.current.active=false; app.current.ended=true; app.current.currentId=null; app.current.currentStartMs=null; app.current.hidden=null; archiveToday(); saveAll();renderAll();toast('今天已结束并归档')}
+function archiveToday(){let blocks=virtualBlocks().filter(b=>!b.live); if(!blocks.length)return; let c=compute(blocks); let day={date:app.current.date||localDate(blocks[0].s),start:blocks[0].s,end:blocks[blocks.length-1].e,blocks:blocks,totals:c.totals,violations:c.violations,aspects:c.aspects,overall:c.overall,status:c.status,tasks:$('tasks').value,gain:$('gain').value,problem:$('problem').value,tomorrow:$('tomorrow').value,goal:c.goal,deepGoal:c.deepGoal,gameLimit:c.gameLimit,manual:c.manual}; let idx=app.history.findIndex(d=>d.date===day.date); if(idx>=0)app.history[idx]=day; else app.history.push(day); app.history.sort((a,b)=>a.date.localeCompare(b.date)); saveAll()}
+function addState(){let name=$('newStateName').value.trim(); let cat=$('newStateCat').value; if(!name){toast('先填状态名称');return} let id='c_'+Date.now(); app.states.push({id,name,cat,def:false}); $('newStateName').value=''; saveAll();initSelects();renderStates();toast('已添加状态')}
+function deleteState(id){if(app.current.currentId===id){toast('当前正在使用，不能删');return} if(app.current.blocks.some(b=>b.m===id)){toast('今天时间轴里已经用过，先别删');return} let s=stateOf(id); if(s.def){toast('默认状态不能删除');return} if(!confirm('删除这个自定义状态？历史记录仍保留名字可能显示为ID。'))return; app.states=app.states.filter(x=>x.id!==id); saveAll();initSelects();renderStates();renderAll()}
+function renderStates(){initSelects(); renderAppUsage(); $('stateRows').innerHTML=app.states.map(s=>`<tr><td>${s.name}<br><span class="tiny">${s.id}</span></td><td><span class="tag2">${CAT[s.cat]?.name||s.cat}</span></td><td>${s.def?'<span class="tiny">默认</span>':`<button class="btn3 miniBtn" onclick="deleteState('${s.id}')">删</button>`}</td></tr>`).join(''); $('categoryRows').innerHTML=Object.entries(CAT).map(([k,v])=>`<tr><td>${v.name}</td><td class="small">${v.desc}</td></tr>`).join('')}
+function blockExtra(b){let x=[]; if(catOf(b.m)==='violation')x.push('违规：'+vtypeName(b.vtype||'unknown')+(b.appLabel?'｜'+b.appLabel:'')); if(b.n)x.push(b.n); if(b.live)x.push('当前'); return x.join(' · ')}
+function renderBlocks(){let arr=virtualBlocks(); $('blockRows').innerHTML=arr.map((b)=>`<tr><td>${timeStr(b.s)}-${timeStr(b.e)}<br><span class="small">${blockExtra(b)}</span></td><td><span class="tag">${nameOf(b.m)}</span><br><span class="tiny">${CAT[catOf(b.m)]?.name||catOf(b.m)}</span></td><td>${durMin(b.s,b.e)}</td><td>${b.live?'':`<button class="btn3 miniBtn" onclick="delBlock(${app.current.blocks.indexOf(b)})">删</button>`}</td></tr>`).join('')||'<tr><td colspan="4" class="small">还没有记录</td></tr>'; checkTimeline(arr)}
+function checkTimeline(arr){if(!arr.length){$('timelineCheck').innerHTML='开始今天后，时间轴会自动连续生成。';return}let gaps=[],over=[];for(let i=1;i<arr.length;i++){let gap=durMin(arr[i-1].e,arr[i].s);if(gap>1)gaps.push(`${timeStr(arr[i-1].e)}-${timeStr(arr[i].s)} ${gap}m`);if(arr[i].s<arr[i-1].e-60000)over.push(timeStr(arr[i].s))}$('timelineCheck').innerHTML=(gaps.length?`<span class="red">有空档：</span>${gaps.join('，')} `:'<span class="green">时间轴连续。</span> ')+(over.length?`<span class="orange">有重叠。</span>`:'')}
+function addManual(){let s=$('manualStart').value,e=$('manualEnd').value;if(!s||!e){toast('先填开始和结束');return}let base=new Date();let [sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number);let start=new Date(base.getFullYear(),base.getMonth(),base.getDate(),sh,sm).getTime();let end=new Date(base.getFullYear(),base.getMonth(),base.getDate(),eh,em).getTime();if(end<=start)end+=86400000; let m=$('manualModule').value; let b={s:start,e:end,m:m,n:$('manualNote').value||'手动补录'}; if(catOf(m)==='violation'){b.vtype=$('manualViolationType').value||'unknown'; autoClassifyBlock(b)} app.current.blocks.push(b); $('manualNote').value=''; saveAll();renderAll();showPage('Timeline')}
+function delBlock(i){if(i<0)return;if(!confirm('删除这段记录？可能破坏连续性。'))return; app.current.blocks.splice(i,1); saveAll();renderAll()}
+function renderPeriod(){let raw=app.history.slice(); if(app.current.blocks.length||app.current.active){let c=compute(virtualBlocks()); raw=raw.filter(d=>d.date!==(app.current.date||localDate())); raw.push({date:app.current.date||localDate(),blocks:virtualBlocks(),totals:c.totals,violations:c.violations,aspects:c.aspects,overall:c.overall,status:c.status})} raw.sort((a,b)=>b.date.localeCompare(a.date)); let p=$('periodSelect').value, days=raw; if(p!=='all'){let cutoff=new Date(); if(p==='week'){let day=cutoff.getDay()||7; cutoff.setDate(cutoff.getDate()-day+1)}else{cutoff.setDate(cutoff.getDate()-Number(p)+1)} let key=localDate(cutoff.getTime()); days=raw.filter(d=>d.date>=key)} if(!days.length){$('periodCards').innerHTML='<div class="small">还没有可统计的每日记录。</div>'; $('periodAspectBars').innerHTML=''; $('periodViolationSummary').innerHTML=''; $('periodViolationRows').innerHTML=''; $('dayRows').innerHTML=''; return} let sum={score:0,study:0,deep:0,game:0,violation:0,violationCount:0,total:0}; let typeSum={}; let asp={study:0,deep:0,focus:0,game:0,task:0,body:0}; days.forEach(d=>{sum.score+=d.overall||0; Object.keys(asp).forEach(k=>asp[k]+=d.aspects?.[k]||0); let blocks=d.blocks||[], t=d.totals||totalsFrom(blocks), v=d.violations||violationStats(blocks); sum.study+=t.study;sum.deep+=t.deep;sum.game+=t.game;sum.violation+=v.total;sum.violationCount+=v.count;sum.total+=t.total; Object.values(v.types||{}).forEach(x=>{if(!typeSum[x.key])typeSum[x.key]={key:x.key,name:x.name,count:0,time:0}; typeSum[x.key].count+=x.count; typeSum[x.key].time+=x.time})}); Object.keys(asp).forEach(k=>asp[k]=asp[k]/days.length); let avg=Math.round(sum.score/days.length), typeRows=Object.values(typeSum).sort((a,b)=>b.time-a.time||b.count-a.count); $('periodCards').innerHTML=`<div class="metric"><b>${avg}</b><span>阶段平均分</span></div><div class="metric"><b>${days.length}天</b><span>统计天数</span></div><div class="metric"><b>${fmt(sum.study)}</b><span>总学习</span></div><div class="metric"><b>${fmt(sum.deep)}</b><span>总深度</span></div><div class="metric"><b>${fmt(sum.game)}</b><span>总游戏</span></div><div class="metric"><b>${sum.violationCount}次 / ${fmt(sum.violation)}</b><span>违规</span></div>`; renderAspectBars($('periodAspectBars'),asp); $('periodViolationSummary').innerHTML=sum.violationCount?`阶段违规 ${sum.violationCount} 次，共 ${fmt(sum.violation)}；主要种类：${typeRows[0]?.name||'无'}`:'阶段内没有违规记录。'; $('periodViolationRows').innerHTML=typeRows.map(x=>`<tr><td>${x.name}</td><td>${x.count}</td><td>${fmt(x.time)}</td></tr>`).join('')||'<tr><td colspan="3" class="small">没有违规记录</td></tr>'; $('dayRows').innerHTML=days.map(d=>{let t=d.totals||totalsFrom(d.blocks||[]), v=d.violations||violationStats(d.blocks||[]);return `<tr><td>${d.date}</td><td>${d.status?.label||''}<br><span class="tiny">违规${v.count}次/${fmt(v.total)}</span></td><td>${d.overall||0}</td><td>${fmt(t.study)} / ${fmt(t.game)}</td></tr>`}).join('')}
+function showPage(p){['Home','States','Timeline','Stats','Reflect'].forEach(x=>{$('page'+x).classList.toggle('hidden',x!==p);$('nav'+x).classList.toggle('active',x===p)});renderAll()}
+function exportText(){let c=compute(virtualBlocks()),t=c.totals,v=c.violations,lines=[]; lines.push(`日期：${app.current.date||localDate()}`); lines.push(`每日状态：${c.status.label}，综合分：${c.overall}/100`); lines.push(`学习：${fmt(t.study)}，深度：${fmt(t.deep)}，游戏：${fmt(t.game)}，微信：${fmt(t.wechat)}，违规：${v.count}次/${fmt(v.total)}，总记录：${fmt(t.total)}`); lines.push('违规种类：'+(v.typeRows&&v.typeRows.length?v.typeRows.map(x=>`${x.name}${x.count}次/${fmt(x.time)}`).join('，'):'无')); lines.push('各方面：'+Object.entries(c.aspects).map(([k,vv])=>`${aspectLabel(k)}${Math.round(vv)}`).join('，')); lines.push('建议：'+c.status.advice); lines.push('核心任务：
+'+$('tasks').value); lines.push('时间轴：'); virtualBlocks().forEach(b=>lines.push(`${timeStr(b.s)}-${timeStr(b.e)} ${nameOf(b.m)} ${durMin(b.s,b.e)}m ${catOf(b.m)==='violation'?'['+vtypeName(b.vtype||'unknown')+'] ':''}${b.n||''}`)); lines.push('今日收获：'+$('gain').value); lines.push('今日问题：'+$('problem').value); lines.push('明日重点：'+$('tomorrow').value); $('exportBox').value=lines.join('
+')}
+function newDay(){if(app.current.active&&!confirm('当前还在连续计时。确认结束/放弃并新开一天？'))return; if(app.current.blocks.length)archiveToday(); app.current={date:localDate(),blocks:[],active:false,currentId:null,currentStartMs:null,hidden:null,ended:false}; ['gain','problem','tomorrow'].forEach(id=>$(id).value=''); saveAll();renderAll();showPage('Home');toast('已准备新的一天')}
+function clearAll(){if(!confirm('确认清空全部本地数据？包括历史统计和自定义状态。'))return; localStorage.clear(); app={states:DEFAULT_STATES.slice(),current:{date:null,blocks:[],active:false,currentId:null,currentStartMs:null,hidden:null,ended:false},history:[],usage:[],appRules:{}}; location.reload()}
+function renderAll(){saveAll();renderHome();renderStates();renderBlocks();renderPeriod()}
+function toast(s){let d=document.createElement('div');d.textContent=s;d.style.cssText='position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#111827;color:white;padding:10px 14px;border-radius:999px;z-index:99;font-size:13px;max-width:88%;text-align:center';document.body.appendChild(d);setTimeout(()=>d.remove(),1600)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(app.current.active&&isLearning(app.current.currentId)){app.current.hidden={startMs:Date.now(),module:app.current.currentId,stateStartMs:app.current.currentStartMs};saveAll()}}else{if(app.current.active&&app.current.hidden){let h=app.current.hidden,n=Date.now(),away=durMin(h.startMs,n);app.current.hidden=null;if(away>=1){setTimeout(()=>{let ok=confirm(`学习状态中离开前台约 ${away} 分钟。
+确定=微信必要沟通；取消=学习违规离开，原因将根据手机使用记录自动匹配`); if(app.current.currentStartMs<h.startMs){app.current.blocks.push({s:app.current.currentStartMs,e:h.startMs,m:h.module,n:'离开前学习'})} if(ok){app.current.blocks.push({s:h.startMs,e:n,m:'wechat',n:'学习中微信必要沟通',from:h.module})}else{let b={s:h.startMs,e:n,m:'violation',vtype:'unknown',n:'等待手机使用记录自动匹配',from:h.module}; autoClassifyBlock(b); app.current.blocks.push(b)} app.current.currentId=h.module; app.current.currentStartMs=n; saveAll();renderAll()},250)}else{saveAll();renderAll()}}}});
+window.onload=()=>{load();initSelects();$('dateText').textContent=app.current.date||localDate();renderAll();setInterval(renderAll,30000)}
+</script>
+</body>
+</html>
