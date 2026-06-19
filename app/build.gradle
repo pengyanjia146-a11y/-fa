@@ -8,7 +8,7 @@ android {
         applicationId 'com.yanjia.studentreflect'
         minSdk 23
         targetSdk 35
-        versionCode 7
-        versionName '1.7-standard'
+        versionCode 9
+        versionName '2.0-record-stats'
     }
 }

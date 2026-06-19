@@ -1,6 +1,5 @@
 package com.yanjia.studentreflect;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AppOpsManager;
 import android.app.usage.UsageEvents;
@@ -9,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
@@ -19,10 +17,7 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends Activity {
@@ -33,12 +28,15 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         webView = new WebView(this);
         setContentView(webView);
+
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
+        s.setTextZoom(100);
+
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.loadUrl("file:///android_asset/app.html");
@@ -58,7 +56,9 @@ public class MainActivity extends Activity {
                 int mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
                         android.os.Process.myUid(), getPackageName());
                 return mode == AppOpsManager.MODE_ALLOWED;
-            } catch (Exception e) { return false; }
+            } catch (Exception e) {
+                return false;
+            }
         }
 
         @JavascriptInterface
@@ -74,11 +74,13 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public String queryUsageEvents(long startMillis, long endMillis) {
+        public String queryUsageEvents(String startMillis, String endMillis) {
             JSONArray out = new JSONArray();
             try {
+                long start = Long.parseLong(startMillis);
+                long end = Long.parseLong(endMillis);
                 UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-                UsageEvents events = usm.queryEvents(startMillis, endMillis);
+                UsageEvents events = usm.queryEvents(start, end);
                 UsageEvents.Event event = new UsageEvents.Event();
                 Map<String, Long> active = new HashMap<>();
                 while (events.hasNextEvent()) {
@@ -86,16 +88,18 @@ public class MainActivity extends Activity {
                     String pkg = event.getPackageName();
                     int type = event.getEventType();
                     long ts = event.getTimeStamp();
+                    if (pkg == null || pkg.equals(getPackageName())) continue;
                     if (type == UsageEvents.Event.MOVE_TO_FOREGROUND || type == UsageEvents.Event.ACTIVITY_RESUMED) {
                         active.put(pkg, ts);
                     } else if (type == UsageEvents.Event.MOVE_TO_BACKGROUND || type == UsageEvents.Event.ACTIVITY_PAUSED) {
                         Long st = active.remove(pkg);
-                        if (st != null && ts > st && !pkg.equals(getPackageName())) {
+                        if (st != null && ts > st) {
                             JSONObject o = new JSONObject();
-                            o.put("start", st);
-                            o.put("end", ts);
-                            o.put("package", pkg);
+                            o.put("s", st);
+                            o.put("e", ts);
+                            o.put("key", pkg);
                             o.put("label", labelFor(pkg));
+                            o.put("src", "system");
                             out.put(o);
                         }
                     }
@@ -112,7 +116,9 @@ public class MainActivity extends Activity {
                 ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
                 CharSequence label = pm.getApplicationLabel(ai);
                 return label == null ? pkg : label.toString();
-            } catch (Exception e) { return pkg; }
+            } catch (Exception e) {
+                return pkg;
+            }
         }
     }
 }
