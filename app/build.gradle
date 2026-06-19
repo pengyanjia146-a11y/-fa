@@ -8,7 +8,26 @@ android {
         applicationId 'com.yanjia.studentreflect'
         minSdk 23
         targetSdk 35
-        versionCode 9
-        versionName '2.0-record-stats'
+        versionCode 11
+        versionName '3.0-record-stats-permission'
+    }
+
+    signingConfigs {
+        stableDebug {
+            storeFile file('keystore/student-reflect-update.jks')
+            storePassword 'studentreflect123'
+            keyAlias 'studentreflect'
+            keyPassword 'studentreflect123'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.stableDebug
+        }
+        release {
+            signingConfig signingConfigs.stableDebug
+            minifyEnabled false
+        }
     }
 }
