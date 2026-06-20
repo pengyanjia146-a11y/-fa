@@ -8,8 +8,8 @@ android {
         applicationId 'com.yanjia.studentreflect'
         minSdk 23
         targetSdk 35
-        versionCode 15
-        versionName '7.0-app-type-json'
+        versionCode 16
+        versionName '7.1-build-fix'
     }
 
     signingConfigs {
@@ -31,7 +31,7 @@ android {
         parallel {
             dimension 'installMode'
             applicationId 'com.yanjia.studentreflect.v5'
-            manifestPlaceholders = [appLabel: '学生状态记录V7']
+            manifestPlaceholders = [appLabel: '学生状态记录V7.1']
         }
     }
 
