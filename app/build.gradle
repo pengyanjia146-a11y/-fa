@@ -8,8 +8,8 @@ android {
         applicationId 'com.yanjia.studentreflect'
         minSdk 23
         targetSdk 35
-        versionCode 11
-        versionName '3.0-record-stats-permission'
+        versionCode 15
+        versionName '7.0-app-type-json'
     }
 
     signingConfigs {
@@ -18,6 +18,20 @@ android {
             storePassword 'studentreflect123'
             keyAlias 'studentreflect'
             keyPassword 'studentreflect123'
+        }
+    }
+
+    flavorDimensions 'installMode'
+    productFlavors {
+        stable {
+            dimension 'installMode'
+            applicationId 'com.yanjia.studentreflect'
+            manifestPlaceholders = [appLabel: '学生状态记录']
+        }
+        parallel {
+            dimension 'installMode'
+            applicationId 'com.yanjia.studentreflect.v5'
+            manifestPlaceholders = [appLabel: '学生状态记录V7']
         }
     }
 

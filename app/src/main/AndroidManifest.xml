@@ -3,8 +3,9 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <application
         android:theme="@style/AppTheme"
-        android:label="学生状态记录"
+        android:label="${appLabel}"
         android:usesCleartextTraffic="true"
+        android:allowBackup="true"
         android:resizeableActivity="true">
         <activity
             android:name=".MainActivity"
